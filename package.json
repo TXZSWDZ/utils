@@ -17,7 +17,8 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "test": "vitest"
+    "test": "vitest",
+    "prepare": "simple-git-hooks"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",
