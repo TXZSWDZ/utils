@@ -18,6 +18,8 @@
   "scripts": {
     "build": "turbo run build",
     "test": "vitest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "prepare": "simple-git-hooks"
   },
   "devDependencies": {
