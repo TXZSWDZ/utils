@@ -3,7 +3,11 @@
     "target": "ESNext",
     "baseUrl": ".",
     "module": "ESNext",
-    "moduleResolution": "Bundler"
+    "moduleResolution": "Bundler",
+    "paths": {
+      "@wthe/utils-core": ["./packages/core/index.ts"],
+      "@wthe/utils-shared": ["./packages/shared/index.ts"]
+    }
   },
   "include": ["packages", "scripts"]
 }
