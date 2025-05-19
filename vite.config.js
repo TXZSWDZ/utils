@@ -13,6 +13,6 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['packages/**/*.{test,spec}.{js,ts}'],
+    environment: 'jsdom',
   },
 })
