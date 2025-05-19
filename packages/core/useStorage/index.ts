@@ -1,76 +1,16 @@
-type storageTypes = 'local' | 'session'
-
-enum methodType {
-  GET = 'getItem',
-  SET = 'setItem',
-  REMOVE = 'removeItem',
-  CLEAR = 'clear',
+interface StorageEventHooks {
+  afterGet?: (key: string, value: any) => void
+  beforeSet?: (key: string, value: any) => [key: string, value: any]
+  beforeRemove?: (key: string) => string
+  beforeClear?: () => boolean
 }
 
-interface StorageHooks {
-  afterGet?: (key: string | null) => any
-  beforeSet?: (key: string, value: any) => any
-  beforeRemove?: (key: string) => any
-  beforeClear?: () => any
-}
-
-interface Config extends StorageHooks {
+interface Config extends StorageEventHooks {
   expires?: boolean | number
 }
 
-// 声明StorageProxy类
-class StorageProxy {
-  #config: Config
-  #originalMethods: { [K in methodType]: Storage[K] }
-  constructor(private storage: Storage, config: Config) {
-    this.#init(storage, config)
-  }
-
-  #init(storage: Storage, config: Config) {
-    this.#originalMethods = Object.fromEntries(
-      Object.values(methodType).map(key => [
-        key,
-        storage[key].bind(storage),
-      ]),
-    ) as { [K in methodType]: Storage[K] }
-
-    this.#config = {
-      afterGet: config.afterGet ?? (value => value),
-      beforeSet: config.beforeSet ?? ((key, value) => [key, value]),
-      beforeRemove: config.beforeRemove ?? (key => key),
-      beforeClear: config.beforeClear ?? (() => {}),
-      expires: config.expires ?? true,
-    }
-  }
-
-  getItem(key: string): any {
-    const value = this.#originalMethods.getItem(key)
-    return this.#config.afterGet(value)
-  }
-
-  setItem(key: string, value: any): void {
-    const [newKey, newValue] = this.#config.beforeSet(key, value)
-
-    if (newKey !== undefined && newValue !== undefined) {
-      this.#originalMethods.setItem(newKey, newValue)
-    }
-  }
-
-  removeItem(key: string): void {
-    const newKey = this.#config.beforeRemove(key)
-    if (newKey !== undefined) {
-      this.#originalMethods.removeItem(newKey)
-    }
-  }
-
-  clear(): void {
-    this.#config.beforeClear()
-    this.#originalMethods.clear()
-  }
-}
-
 interface options {
-  type?: storageTypes
+  type?: 'local' | 'session'
   config?: Config
 }
 
@@ -81,19 +21,96 @@ interface StorageService {
   clear: () => void
 }
 
+class StorageProxy {
+  #config: Config
+  #storage: Storage
+  constructor(storage: Storage, config: Config) {
+    this.#init(storage, config)
+  }
+
+  #init(storage: Storage, config: Config) {
+    this.#storage = storage
+    const defaultHooks = {
+      afterGet: (key: string, value: any) => value,
+      beforeSet: (key: string, value: any) => [key, value],
+      beforeRemove: (key: string) => key,
+      beforeClear: () => true,
+      expires: true,
+    }
+    this.#config = Object.assign({}, defaultHooks, config)
+  }
+
+  #getExpiryTime(): number | boolean {
+    const { expires } = this.#config
+    if (!expires)
+      return false
+    if (typeof expires === 'number')
+      return Date.now() + expires
+    return Date.now() + 1000 * 60 * 60 * 24 * 30
+  }
+
+  getItem(key: string): any {
+    const value = this.#storage.getItem(key)
+    if (!value)
+      return this.#config.afterGet(key, null)
+    const { value: storedValue, expiry } = JSON.parse(value)
+    if (expiry && expiry < Date.now()) {
+      this.#storage.removeItem(key)
+      return this.#config.afterGet(key, null)
+    }
+    else {
+      return this.#config.afterGet(key, storedValue)
+    }
+  }
+
+  setItem(key: string, value: any): void {
+    const [newKey, newValue] = this.#config.beforeSet(key, value)
+    if (newKey !== undefined && newValue !== undefined) {
+      const expiry = this.#getExpiryTime()
+      let finalValue = newValue
+      if (expiry) {
+        const payload = {
+          value: newValue,
+          expiry,
+        }
+        finalValue = JSON.stringify(payload)
+      }
+      this.#storage.setItem(newKey, finalValue)
+    }
+  }
+
+  removeItem(key: string): void {
+    const newKey = this.#config.beforeRemove(key)
+    if (newKey !== undefined) {
+      this.#storage.removeItem(newKey)
+    }
+  }
+
+  clear(): void {
+    const shouldClear = this.#config.beforeClear()
+    if (shouldClear) {
+      this.#storage.clear()
+    }
+  }
+}
+
+const storageInstances = new Map<'local' | 'session', StorageService>()
+
 export function useStorage(
   options?: options,
 ): StorageService {
   const { type = 'local', config = {} } = options || {}
-
-  const storage: Storage = type === 'local' ? window.localStorage : window.sessionStorage
-
-  const storageInterface = new StorageProxy(storage, config)
-
-  return {
-    get: (key: string) => storageInterface.getItem(key),
-    set: (key: string, value: any) => storageInterface.setItem(key, value),
-    remove: (key: string) => storageInterface.removeItem(key),
-    clear: () => storageInterface.clear,
+  if (storageInstances.has(type)) {
+    return storageInstances.get(type)!
   }
+  const storage: Storage = type === 'local' ? window.localStorage : window.sessionStorage
+  const storageInstance = new StorageProxy(storage, config)
+  const service = {
+    get: (key: string) => storageInstance.getItem(key),
+    set: (key: string, value: any) => { storageInstance.setItem(key, value) },
+    remove: (key: string) => { storageInstance.removeItem(key) },
+    clear: () => { storageInstance.clear() },
+  }
+  storageInstances.set(type, service)
+  return service
 }
