@@ -9,5 +9,5 @@
       "@wthe/utils-shared": ["./packages/shared/index.ts"]
     }
   },
-  "include": ["packages", "scripts"]
+  "include": ["*.ts", "packages", "scripts", "playgrounds"]
 }
