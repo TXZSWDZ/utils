@@ -1,11 +1,12 @@
 interface StorageEventHooks {
-  afterGet?: (key: string, value: any) => void
+  afterGet?: (key: string, value: any) => any
   beforeSet?: (key: string, value: any) => [key: string, value: any]
   beforeRemove?: (key: string) => string
   beforeClear?: () => boolean
 }
 
 interface Config extends StorageEventHooks {
+  merge?: boolean
   expires?: boolean | number
 }
 
@@ -27,26 +28,23 @@ export function useStorage(
   options?: options,
 ): StorageService {
   class StorageProxy {
-    #config: Config
-    #storage: Storage
+    private config: Config
+    private storage: Storage
     constructor(storage: Storage, config: Config) {
-      this.#init(storage, config)
-    }
-
-    #init(storage: Storage, config: Config) {
-      this.#storage = storage
-      const defaultHooks = {
-        afterGet: (key: string, value: any) => value,
-        beforeSet: (key: string, value: any) => [key, value],
-        beforeRemove: (key: string) => key,
+      this.storage = storage
+      this.config = {
+        afterGet: (key, value) => value,
+        beforeSet: (key, value) => [key, value],
+        beforeRemove: key => key,
         beforeClear: () => true,
+        merge: false,
         expires: true,
+        ...config,
       }
-      this.#config = Object.assign({}, defaultHooks, config)
     }
 
-    #getExpiryTime(): number | boolean {
-      const { expires } = this.#config
+    private getExpiryTime(): number | boolean {
+      const { expires } = this.config
       if (!expires)
         return false
       if (typeof expires === 'number')
@@ -55,46 +53,55 @@ export function useStorage(
     }
 
     getItem(key: string): any {
-      const value = this.#storage.getItem(key)
+      const value = this.storage.getItem(key)
       if (!value)
-        return this.#config.afterGet(key, null)
+        return this.config.afterGet(key, null)
       const { value: storedValue, expiry } = JSON.parse(value)
       if (expiry && expiry < Date.now()) {
-        this.#storage.removeItem(key)
-        return this.#config.afterGet(key, null)
+        this.storage.removeItem(key)
+        return this.config.afterGet(key, null)
       }
       else {
-        return this.#config.afterGet(key, storedValue)
+        return this.config.afterGet(key, storedValue)
       }
     }
 
     setItem(key: string, value: any): void {
-      const [newKey, newValue] = this.#config.beforeSet(key, value)
-      if (newKey !== undefined && newValue !== undefined) {
-        const expiry = this.#getExpiryTime()
-        let finalValue = newValue
-        if (expiry) {
-          const payload = {
-            value: newValue,
-            expiry,
-          }
-          finalValue = JSON.stringify(payload)
+      const [newKey, newValue] = this.config.beforeSet(key, value)
+      if (newKey !== undefined || newValue !== undefined)
+        return
+      let finalValue = newValue
+
+      if (this.config.merge && typeof newValue === 'object') {
+        const existingValue = this.getItem(newKey)
+        if (existingValue && typeof existingValue === 'object') {
+          finalValue = { ...existingValue, ...newValue }
         }
-        this.#storage.setItem(newKey, finalValue)
       }
+
+      const expiry = this.getExpiryTime()
+
+      if (expiry) {
+        const payload = {
+          value: newValue,
+          expiry,
+        }
+        finalValue = JSON.stringify(payload)
+      }
+      this.storage.setItem(newKey, finalValue)
     }
 
     removeItem(key: string): void {
-      const newKey = this.#config.beforeRemove(key)
+      const newKey = this.config.beforeRemove(key)
       if (newKey !== undefined) {
-        this.#storage.removeItem(newKey)
+        this.storage.removeItem(newKey)
       }
     }
 
     clear(): void {
-      const shouldClear = this.#config.beforeClear()
+      const shouldClear = this.config.beforeClear()
       if (shouldClear) {
-        this.#storage.clear()
+        this.storage.clear()
       }
     }
   }
