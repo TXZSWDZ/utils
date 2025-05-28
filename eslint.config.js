@@ -10,4 +10,10 @@ export default w(
       },
     },
   },
+  {
+    ignores: ['**/*.{test,spec}'],
+    rules: {
+      'antfu/no-top-level-await': 'off',
+    },
+  },
 )
