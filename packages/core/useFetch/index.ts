@@ -35,12 +35,12 @@ interface UseFetchOptions {
   /**
    * 请求成功后执行的函数
    */
-  afterFetch?: (ctx) => any
+  afterFetch?: (ctx: any) => any
 
   /**
    * 请求失败后的函数
    */
-  onFetchError?: (ctx) => any
+  onFetchError?: (ctx: any) => any
 
 }
 
@@ -51,7 +51,7 @@ interface Options extends Omit<RequestInit, 'body'> {
 interface InternalConfig {
   method: HttpMethod
   type: DataType
-  payload: Options['body']
+  payload: Options['body'] | null
   payloadType: 'text' | 'json' | 'formData'
 }
 
@@ -138,7 +138,7 @@ export function useFetch<T>(url: string, ...args: any[]): UseFetchReturn<T> | Pr
     let isCanceled = false
 
     if (options.body && typeof options.body === 'object') {
-      if (!options.method || options.method.toLocaleUpperCase() === 'GET' || defaultOptions.method.toLocaleUpperCase() === 'GET') {
+      if (!options.method || options.method.toLocaleUpperCase() === 'GET' || defaultOptions.method!.toLocaleUpperCase() === 'GET') {
         url = buildQueryParams(url, options.body)
         options.body = undefined
       }
