@@ -7,7 +7,8 @@
     "paths": {
       "@wthe/utils-core": ["./packages/core/index.ts"],
       "@wthe/utils-shared": ["./packages/shared/index.ts"]
-    }
+    },
+    "strict": true
   },
   "include": ["*.ts", "packages", "scripts", "playgrounds"]
 }
