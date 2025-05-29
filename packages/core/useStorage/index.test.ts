@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { useStorage } from './index'
 
-const { set, get, remove, clear } = useStorage()
+const { set, get, remove, clear } = useStorage({ config: { expires: false } })
 
 const storage1 = useStorage()
 
@@ -15,6 +15,7 @@ describe('useStorage', () => {
   it('should set and get a value', () => {
     set('key', 'value')
     const result = get('key')
+
     expect(result).toBe('value')
   })
   it('should remove a value', () => {
