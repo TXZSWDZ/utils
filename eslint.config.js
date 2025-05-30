@@ -2,6 +2,7 @@ import w from '@wthe/eslint-config'
 
 export default w(
   {
+    vue: true,
     jsonc: true,
     yaml: true,
     overrides: {
