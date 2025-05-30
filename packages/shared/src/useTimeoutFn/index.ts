@@ -2,6 +2,7 @@ type State = 'initial' | 'running' | 'paused' | 'completed' | 'canceled'
 
 interface FnReturn {
   getState: () => State
+  getRemaining: () => number
   start: () => void
   pause: () => void
   resume: () => void
@@ -22,10 +23,20 @@ export function useTimeoutFn(callback: () => void, delay: number, immediate: boo
   let timer: NodeJS.Timeout | null = null
 
   let remaining = delay
+
+  const cleanup = () => {
+    if (timer) {
+      clearTimeout(timer)
+      timer = null
+    }
+    startTime = null
+    pauseTime = null
+  }
   const fn = () => {
     callback()
     state = 'completed'
     remaining = delay
+    cleanup()
   }
 
   function start() {
@@ -72,14 +83,7 @@ export function useTimeoutFn(callback: () => void, delay: number, immediate: boo
 
     state = 'canceled'
 
-    if (timer)
-      clearTimeout(timer)
-
-    timer = null
-
-    startTime = null
-
-    pauseTime = null
+    cleanup()
 
     remaining = delay
   }
@@ -87,8 +91,23 @@ export function useTimeoutFn(callback: () => void, delay: number, immediate: boo
   function getState() {
     return state
   }
+  function getRemaining() {
+    switch (state) {
+      case 'initial':
+        return delay
+      case 'running':
+        return remaining - (Date.now() - startTime!)
+      case 'paused':
+        return remaining
+      case 'completed':
+      case 'canceled':
+        return 0
+      default:
+        return remaining
+    }
+  }
 
-  const shell = { getState, start, pause, resume, cancel }
+  const shell = { getState, getRemaining, start, pause, resume, cancel }
 
   if (immediate) {
     start()
