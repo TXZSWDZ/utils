@@ -1,52 +1,22 @@
 <script setup lang="ts">
-import { useFetch, useStorage } from "@wthe/utils-core"
+import { shallowRef } from 'vue'
 
-import { useTimeoutFn } from "@wthe/utils-shared"
+const componentList: Record<string, any> = shallowRef({})
 
-const { execute, abort } = useFetch('https://jsonplaceholder.typicode.com/posts/1', { immediate: false });
+const components = import.meta.glob('./components/*.vue', { eager: true })
 
-const { get, set, remove, clear } = useStorage()
-
-const { start, pause, resume, cancel, getState } = useTimeoutFn(() => { console.log('useSetTimeoutFn') }, 5000)
+for (const path in components) {
+  const component: any = components[path]
+  const name = path.split('/').pop()?.replace(/\.\w+$/, '')
+  if (name) {
+    componentList.value[name] = component.default
+  }
+}
 </script>
 
 <template>
-  <div>
-    <span>useFetch：</span>
-    <button @click="execute">
-      发送
-    </button>
-    <button @click="abort">
-      取消
-    </button>
-  </div>
-  <div>
-    <span>useStorage：</span>
-    <button @click="set('name', { age: 16 })">
-      设置1
-    </button>
-    <button @click="set('name', 2, { merge: true })">
-      设置2
-    </button>
-    <button @click="set('name', 3)">
-      设置3
-    </button>
-    <button @click="() => { console.log(get('name')) }">
-      获取
-    </button>
-    <button @click="remove('name')">
-      删除
-    </button>
-    <button @click="clear()">
-      清除
-    </button>
-  </div>
-  <div>
-    <span>useSetTimeoutFn：</span>
-    <button @click="start">开始</button>
-    <button @click="pause">暂停</button>
-    <button @click="resume">继续</button>
-    <button @click="cancel">取消</button>
-    <button @click="() => { console.log(getState()) }">获取状态</button>
+  <div v-for="(value, key) in componentList" :key="key">
+    <span>{{ key }}：</span>
+    <component :is="value" />
   </div>
 </template>
