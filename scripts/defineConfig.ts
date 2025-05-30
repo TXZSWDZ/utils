@@ -3,6 +3,7 @@ import type { OutputOptions, RollupOptions } from 'rollup'
 import { dts } from 'rollup-plugin-dts'
 import esbuild from 'rollup-plugin-esbuild'
 
+const external = [/@wthe\/*/]
 function output(fileName: string): OutputOptions {
   return {
     file: `./dist/${fileName}`,
@@ -18,6 +19,7 @@ function defineConfig(): RollupOptions[] {
       plugins: [
         esbuild(),
       ],
+      external,
     },
     {
       input: './index.ts',
@@ -25,6 +27,7 @@ function defineConfig(): RollupOptions[] {
       plugins: [
         dts(),
       ],
+      external,
     },
   ]
   return configs
