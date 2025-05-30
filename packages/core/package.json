@@ -16,5 +16,8 @@
   "scripts": {
     "build": "rollup --config=rollup.config.ts --configPlugin=rollup-plugin-esbuild",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@wthe/utils-shared": "workspace:^"
   }
 }
