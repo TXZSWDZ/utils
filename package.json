@@ -16,6 +16,7 @@
     "utils"
   ],
   "scripts": {
+    "dev:vite": "pnpm --filter ./playgrounds/vite dev",
     "build": "turbo run build",
     "test": "vitest",
     "lint": "eslint .",
