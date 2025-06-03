@@ -1,4 +1,11 @@
-import { IsFlags } from '../constants'
+export enum IsFlags {
+  MAP = '[object Map]',
+  SET = '[object Set]',
+  DATE = '[object Date]',
+  REGEXP = '[object RegExp]',
+  OBJECT = '[object Object]',
+  PROMISE = '[object Promise]',
+}
 
 export const objectToString: typeof Object.prototype.toString = Object.prototype.toString
 
