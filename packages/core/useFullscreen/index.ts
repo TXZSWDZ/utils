@@ -1,3 +1,5 @@
+import type { AsyncFn } from '@wthe/utils-shared'
+
 interface FullScreenElement extends HTMLElement {
   requestFullscreen: () => Promise<void>
   webkitRequestFullscreen?: () => Promise<void>
@@ -15,9 +17,9 @@ interface FullScreenDocument extends Document {
   msExitFullscreen?: () => Promise<void>
 }
 
-type MyRequest = 'requestFullscreen' | 'webkitRequestFullscreen' | 'mozRequestFullScreen' | 'msRequestFullscreen' | null
-type MyExit = 'exitFullscreen' | 'webkitExitFullscreen' | 'mozCancelFullScreen' | 'msExitFullscreen' | null
-type MyElement = 'fullscreenElement' | 'webkitFullscreenElement' | 'mozFullScreenElement' | 'msFullscreenElement' | null
+type MyRequest = keyof FullScreenElement | null
+type MyExit = keyof FullScreenDocument | null
+type MyElement = keyof FullScreenDocument | null
 
 interface FullScreenAPI {
   request: MyRequest
@@ -69,21 +71,16 @@ export function useFullScreen(target: Element) {
       : { request: null, exit: null, element: null }
   }
 
-  // const supportedAPI = detectSupportedAPI()
+  const supportedAPI = detectSupportedAPI()
 
   const getFullScreenElement = (): Element | null => {
-    const doc = document as FullScreenDocument
-    return (
-      doc.fullscreenElement
-      || doc.webkitFullscreenElement
-      || doc.mozFullScreenElement
-      || doc.msFullscreenElement
-      || null
-    )
+    if (!supportedAPI.element)
+      return null
+    return doc[supportedAPI.element] as Element
   }
 
   function isSupported() {
-    return !!(document as FullScreenDocument).fullscreenEnabled
+    return !!doc.fullscreenEnabled
   }
 
   let isFullScreen: boolean = !!getFullScreenElement()
@@ -96,22 +93,11 @@ export function useFullScreen(target: Element) {
     if (isFullScreen || !isSupported())
       return
 
-    const el = target as FullScreenElement
-
     try {
-      if (el.requestFullscreen) {
-        await el.requestFullscreen()
+      if (supportedAPI.request) {
+        await (el[supportedAPI.request] as AsyncFn)()
+        return true
       }
-      else if (el.webkitRequestFullscreen) {
-        await el.webkitRequestFullscreen()
-      }
-      else if (el.mozRequestFullScreen) {
-        await el.mozRequestFullScreen()
-      }
-      else if (el.msRequestFullscreen) {
-        await el.msRequestFullscreen()
-      }
-      updateFullScreenStatus()
     }
     catch (error) {
       console.error('Error attempting to enable fullscreen:', error)
@@ -119,25 +105,14 @@ export function useFullScreen(target: Element) {
   }
 
   async function exit() {
-    if (isFullScreen || !isSupported())
+    if (!isFullScreen || !isSupported())
       return
 
-    const doc = document as FullScreenDocument
-
     try {
-      if (doc.exitFullscreen) {
-        await doc.exitFullscreen()
+      if (supportedAPI.exit) {
+        await (doc[supportedAPI.exit] as AsyncFn)()
+        return true
       }
-      else if (doc.webkitExitFullscreen) {
-        await doc.webkitExitFullscreen()
-      }
-      else if (doc.mozCancelFullScreen) {
-        await doc.mozCancelFullScreen()
-      }
-      else if (doc.msExitFullscreen) {
-        await doc.msExitFullscreen()
-      }
-      updateFullScreenStatus()
     }
     catch (error) {
       console.error('Error attempting to exit fullscreen:', error)
