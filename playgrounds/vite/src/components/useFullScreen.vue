@@ -4,26 +4,37 @@ import { onMounted, ref } from 'vue'
 
 const boxRef = ref()
 
-let toggle: () => void
+let enter1: () => void
+let exit1: () => void
+let toggle1: () => void
 
 onMounted(() => {
-  const result = useFullScreen(boxRef.value)
+  const { enter, exit, toggle } = useFullScreen(boxRef.value)
 
-  toggle = result.toggle
+  enter1 = enter
+  exit1 = exit
+  toggle1 = toggle
 })
 </script>
 
 <template>
-  <button @click="toggle">
-    Toggle Fullscreen
-  </button>
-  <div ref="boxRef" class="box" />
+  <div ref="boxRef" class="box">
+    <button @click="enter1">
+      Enter Fullscreen
+    </button>
+    <button @click="exit1">
+      exit Fullscreen
+    </button>
+    <button @click="toggle1">
+      toggle Fullscreen
+    </button>
+  </div>
 </template>
 
 <style scoped>
 .box {
   width: 100px;
   height: 100px;
-  background-color: red;
+  background-color: rgb(160, 160, 160);
 }
 </style>
