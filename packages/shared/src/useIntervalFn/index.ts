@@ -1,6 +1,15 @@
 import type { State } from '../useTimeoutFn'
 
-export function useIntervalFn(callback: () => void, delay: number, immediate: boolean = true) {
+export interface UseIntervalFnReturn {
+  getState?: () => Exclude<State, 'completed'>
+  getRemaining?: () => number
+  start?: () => void
+  pause?: () => void
+  resume?: () => void
+  cancel?: () => void
+}
+
+export function useIntervalFn(callback: () => void, delay: number, immediate: boolean = true): UseIntervalFnReturn {
   if (delay < 0) {
     throw new Error('Delay must be a non-negative number')
   }
