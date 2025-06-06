@@ -1,4 +1,6 @@
-import type { AsyncFn } from '@wthe/utils-shared'
+import type { AsyncFn, UseIntervalFnReturn } from '@wthe/utils-shared'
+
+import { useIntervalFn, useTimeoutFn } from '@wthe/utils-shared'
 
 type WebSocketStatus = 'OPEN' | 'CONNECTING' | 'CLOSED' | 'ERROR' | 'RECONNECTING'
 
@@ -31,7 +33,7 @@ const DEFAULT_PING_MESSAGE = 'ping'
 export class EnhancedWebSocket<T> {
   private ws: WebSocket | null = null
   private status: WebSocketStatus = 'CLOSED'
-  private heartbeatTimer: NodeJS.Timeout | null = null
+  private heartbeatTimer: UseIntervalFnReturn | null = null
   private currentReconnectAttempts: number = 0
   constructor(private url: string, private options: WebSocketOptions = {}, private callbacks: WebSocketCallbacks<T> = {}) {
     this.options = {
@@ -44,6 +46,8 @@ export class EnhancedWebSocket<T> {
     }
 
     this.connect = this.connect.bind(this)
+    this.pauseHeartbeat = this.pauseHeartbeat.bind(this)
+    this.resumeHeartbeat = this.resumeHeartbeat.bind(this)
     this.send = this.send.bind(this)
     this.close = this.close.bind(this)
 
@@ -60,19 +64,38 @@ export class EnhancedWebSocket<T> {
 
   private stopHeartbeat() {
     if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer)
+      this.heartbeatTimer.cancel?.()
       this.heartbeatTimer = null
     }
   }
 
+  public pauseHeartbeat() {
+    if (!this.heartbeatTimer) {
+      console.warn('No heartbeat timer to pause.')
+      return
+    }
+
+    this.heartbeatTimer.pause?.()
+  }
+
+  public resumeHeartbeat() {
+    if (!this.heartbeatTimer) {
+      console.warn('No heartbeat timer to resume.')
+      return
+    }
+
+    this.heartbeatTimer.resume?.()
+  }
+
   private startHeartbeat() {
     if (this.options.heartbeat) {
-      const { interval = 30000, message = DEFAULT_PING_MESSAGE } = this.resolveNestedOptions(this.options.heartbeat)
+      const { interval = 10000, message = DEFAULT_PING_MESSAGE } = this.resolveNestedOptions(this.options.heartbeat)
       if (interval <= 0) {
         console.warn('Heartbeat interval must be greater than 0. Disabling heartbeat.')
         return
       }
-      this.heartbeatTimer = setInterval(() => {
+
+      this.heartbeatTimer = useIntervalFn(() => {
         if (this.status === 'OPEN' && this.ws?.readyState === WebSocket.OPEN) {
           this.ws.send(message)
         }
@@ -87,21 +110,23 @@ export class EnhancedWebSocket<T> {
       this.status = 'RECONNECTING'
 
       this.currentReconnectAttempts++
-      const attemptReconnect = async () => {
-        if (this.currentReconnectAttempts >= maxAttempts) {
-          console.warn(`Max reconnect attempts reached (${maxAttempts}). Giving up.`)
-          this.status = 'CLOSED'
-          return
-        }
 
-        this.options.autoReconnect = {
-          ...this.options.autoReconnect as autoReconnectOptions,
-          ...await this.callbacks.onReconnect?.(this.options.autoReconnect as autoReconnectOptions) || {},
-        }
-        this._init()
+      if (this.currentReconnectAttempts >= maxAttempts) {
+        console.warn(`Max reconnect attempts reached (${maxAttempts}). Giving up.`)
+        this.status = 'CLOSED'
       }
+      else {
+        const attemptReconnect = async () => {
+          this.options.autoReconnect = {
+            ...this.options.autoReconnect as autoReconnectOptions,
+            ...await this.callbacks.onReconnect?.(this.options.autoReconnect as autoReconnectOptions) || {},
+          }
+          this._init()
+        }
+        console.warn(`WebSocket connection lost. Attempting to reconnect in ${delay}ms... (Attempt ${this.currentReconnectAttempts}/${maxAttempts})`)
 
-      setTimeout(attemptReconnect, delay)
+        useTimeoutFn(attemptReconnect, delay)
+      }
     }
   }
 
@@ -154,7 +179,7 @@ export class EnhancedWebSocket<T> {
       this.ws.send(message)
     }
     else {
-      throw new Error('WebSocket is not open or is not initialized.')
+      console.warn('WebSocket is not open. Cannot send message:', message)
     }
   }
 
@@ -168,4 +193,12 @@ export class EnhancedWebSocket<T> {
       this.ws = null
     }
   }
+}
+
+export function useWebSocket<T = any>(
+  url: string,
+  options: WebSocketOptions = {},
+  callbacks: WebSocketCallbacks<T> = {},
+): EnhancedWebSocket<T> {
+  return new EnhancedWebSocket<T>(url, options, callbacks)
 }
