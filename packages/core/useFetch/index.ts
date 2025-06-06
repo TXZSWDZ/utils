@@ -80,6 +80,7 @@ function buildQueryParams(url: string, params: Record<string, any>): string {
   return url + (url.includes('?') ? '&' : '?') + query.toString()
 }
 
+// TODO: 后续继续集成get, post, put, delete等方法
 export function useFetch<T>(url: string): Promise<T>
 export function useFetch<T>(url: string, useFetchOptions: UseFetchOptions & { immediate: true }): Promise<T>
 export function useFetch<T>(url: string, useFetchOptions: UseFetchOptions & { immediate: false }): UseFetchReturn<T>
