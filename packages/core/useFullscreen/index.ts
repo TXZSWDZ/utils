@@ -95,7 +95,7 @@ export function useFullScreen(target: Element) {
 
     try {
       if (supportedAPI.request) {
-        await (el[supportedAPI.request] as AsyncFn)()
+        await (el[supportedAPI.request] as AsyncFn<any, void>)()
         return true
       }
     }
@@ -110,7 +110,7 @@ export function useFullScreen(target: Element) {
 
     try {
       if (supportedAPI.exit) {
-        await (doc[supportedAPI.exit] as AsyncFn)()
+        await (doc[supportedAPI.exit] as AsyncFn<any, void>)()
         return true
       }
     }
