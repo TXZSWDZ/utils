@@ -1,6 +1,6 @@
-type State = 'initial' | 'running' | 'paused' | 'completed' | 'canceled'
+export type State = 'initial' | 'running' | 'paused' | 'completed' | 'canceled'
 
-interface FnReturn {
+interface UseTimeoutFnReturn {
   getState: () => State
   getRemaining: () => number
   start: () => void
@@ -9,7 +9,7 @@ interface FnReturn {
   cancel: () => void
 }
 
-export function useTimeoutFn(callback: () => void, delay: number, immediate: boolean = true): FnReturn {
+export function useTimeoutFn(callback: () => void, delay: number, immediate: boolean = true): UseTimeoutFnReturn {
   if (delay < 0) {
     throw new Error('Delay must be a non-negative number')
   }
@@ -29,13 +29,18 @@ export function useTimeoutFn(callback: () => void, delay: number, immediate: boo
       clearTimeout(timer)
       timer = null
     }
+
     startTime = null
+
     pauseTime = null
   }
   const fn = () => {
-    callback()
     state = 'completed'
+
+    callback()
+
     remaining = delay
+
     cleanup()
   }
 
@@ -43,9 +48,9 @@ export function useTimeoutFn(callback: () => void, delay: number, immediate: boo
     if (state === 'running' || state === 'paused')
       return
 
-    startTime = Date.now()
-
     state = 'running'
+
+    startTime = Date.now()
 
     timer = setTimeout(fn, remaining)
   }
@@ -55,11 +60,11 @@ export function useTimeoutFn(callback: () => void, delay: number, immediate: boo
       return
     }
 
+    state = 'paused'
+
     pauseTime = Date.now()
 
     remaining -= pauseTime - startTime!
-
-    state = 'paused'
 
     if (timer)
       clearTimeout(timer)
@@ -70,9 +75,9 @@ export function useTimeoutFn(callback: () => void, delay: number, immediate: boo
       return
     }
 
-    startTime = Date.now()
-
     state = 'running'
+
+    startTime = Date.now()
 
     timer = setTimeout(fn, remaining)
   }
@@ -107,11 +112,11 @@ export function useTimeoutFn(callback: () => void, delay: number, immediate: boo
     }
   }
 
-  const shell = { getState, getRemaining, start, pause, resume, cancel }
-
   if (immediate) {
     start()
   }
+
+  const shell = { getState, getRemaining, start, pause, resume, cancel }
 
   return shell
 }
