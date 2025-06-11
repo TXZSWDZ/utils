@@ -61,6 +61,7 @@ export function useStorage(
       return Date.now() + 1000 * 60 * 60 * 24 * 30
     }
 
+    // TODO 提取处理JSON.parse
     getItem(key: string): any {
       const value = this.storage.getItem(key)
 
@@ -84,6 +85,7 @@ export function useStorage(
       }
     }
 
+    // TODO 提取处理JSON.stringify
     setItem(key: string, value: any, options?: Config): void {
       const { merge: setMerge = undefined } = options || {}
       const { merge: configMerge } = this.config
