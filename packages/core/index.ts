@@ -1,5 +1,6 @@
 export * from './onClickOutside'
 export * from './useClipboard'
+export * from './useCookies'
 export * from './useFetch'
 export * from './useFullscreen'
 export * from './useStorage'
