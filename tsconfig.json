@@ -6,7 +6,8 @@
     "moduleResolution": "Bundler",
     "paths": {
       "@wthe/utils-core": ["./packages/core/index.ts"],
-      "@wthe/utils-shared": ["./packages/shared/index.ts"]
+      "@wthe/utils-shared": ["./packages/shared/index.ts"],
+      "@wthe/utils-vue": ["./packages/vue/index.ts"]
     },
     "strict": true
   },

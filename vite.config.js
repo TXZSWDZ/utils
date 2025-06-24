@@ -10,6 +10,7 @@ export default defineConfig({
     alias: {
       '@wthe/utils-core': resolve('packages/core/index.ts'),
       '@wthe/utils-shared': resolve('packages/shared/index.ts'),
+      '@wthe/utils-vue': resolve('packages/shared/index.ts'),
     },
   },
   test: {
