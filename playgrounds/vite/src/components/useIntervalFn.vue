@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useIntervalFn } from '@wthe/utils-shared'
+import { vUseIntervalFn } from '@wthe/utils-vue'
 import { ref } from 'vue'
 
 const count = ref(0)
@@ -7,6 +8,7 @@ const count = ref(0)
 const { start, pause, resume, cancel, getState, getRemaining } = useIntervalFn(() => {
   count.value++
 }, 6000, false)
+const { state, remaining } = vUseIntervalFn(() => {}, 6000)
 </script>
 
 <template>
@@ -31,4 +33,15 @@ const { start, pause, resume, cancel, getState, getRemaining } = useIntervalFn((
   <span>
     Interval function executed：{{ count }}
   </span>
+  <div>
+    <div>
+      <span>
+        vue Remaining time：{{ remaining }}
+      </span>
+      <span> | </span>
+      <span>
+        vue State：{{ state }}
+      </span>
+    </div>
+  </div>
 </template>

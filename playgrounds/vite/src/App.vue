@@ -16,13 +16,19 @@ for (const path in components) {
 
 <template>
   <div v-for="(value, key) in componentList" :key="key" class="component-item">
+    <div>
+      <span v-for="(_, index) in 88" :key="index">-</span>
+    </div>
     <span>{{ key }}：</span>
     <component :is="value" />
+    <div>
+      <span v-for="(_, index) in 88" :key="index">-</span>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .component-item{
-  margin-bottom: 24px;
+  margin-bottom: 88px;
 }
 </style>
