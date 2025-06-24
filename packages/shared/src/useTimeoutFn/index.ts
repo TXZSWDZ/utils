@@ -1,6 +1,6 @@
 export type State = 'initial' | 'running' | 'paused' | 'completed' | 'canceled'
 
-interface UseTimeoutFnReturn {
+export interface UseTimeoutFnReturn {
   getState: () => State
   getRemaining: () => number
   start: () => void
@@ -20,7 +20,7 @@ export function useTimeoutFn(callback: () => void, delay: number, immediate: boo
 
   let pauseTime: number | null = null
 
-  let timer: NodeJS.Timeout | null = null
+  let timer: ReturnType<typeof setTimeout> | null = null
 
   let remaining = delay
 
@@ -45,8 +45,10 @@ export function useTimeoutFn(callback: () => void, delay: number, immediate: boo
   }
 
   function start() {
-    if (state === 'running' || state === 'paused')
+    if (state === 'running' || state === 'paused') {
+      console.warn('Timeout is already running')
       return
+    }
 
     state = 'running'
 
@@ -57,6 +59,7 @@ export function useTimeoutFn(callback: () => void, delay: number, immediate: boo
 
   function pause() {
     if (state !== 'running') {
+      console.warn('Timeout is not running')
       return
     }
 
@@ -72,6 +75,7 @@ export function useTimeoutFn(callback: () => void, delay: number, immediate: boo
 
   function resume() {
     if (state !== 'paused') {
+      console.warn('Timeout is not paused.')
       return
     }
 
@@ -83,8 +87,10 @@ export function useTimeoutFn(callback: () => void, delay: number, immediate: boo
   }
 
   function cancel() {
-    if (state === 'canceled' || state === 'completed')
+    if (state === 'canceled' || state === 'completed') {
+      console.warn('Timeout has already been canceled or completed.')
       return
+    }
 
     state = 'canceled'
 
