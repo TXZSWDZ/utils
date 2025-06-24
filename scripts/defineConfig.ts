@@ -3,7 +3,7 @@ import type { OutputOptions, RollupOptions } from 'rollup'
 import { dts } from 'rollup-plugin-dts'
 import esbuild from 'rollup-plugin-esbuild'
 
-const external = [/@wthe\/*/]
+const external = ['@wthe/utils-core', '@wthe/utils-shared', 'vue', 'cookie']
 function output(fileName: string): OutputOptions {
   return {
     file: `./dist/${fileName}`,
