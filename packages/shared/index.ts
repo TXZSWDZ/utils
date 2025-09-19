@@ -1,6 +1,7 @@
 export * from './src/is'
 export * from './src/types'
 export * from './src/useArrayCompare'
+export * from './src/useDebounce'
 export * from './src/useIntervalFn'
 export * from './src/useMerge'
 export * from './src/usePassword'
